@@ -11,7 +11,7 @@ grad_sq_sum = [0] * 10
 train = []
 test = []
 l_rate = 1.6
-loop = 10000
+loop = 40000
 
 def rate(i):
 	return l_rate / math.sqrt(grad_sq_sum[i])
@@ -21,9 +21,10 @@ def estim(data):
 	return sum(map(mul, params[0:9], data[0:9])) + params[9]
 	
 def gradient(data):
+	estimate = estim(data)
 	for i in range(len(data) - 1):
-		grad[i] -= 2 * (data[9] - estim(data)) * data[i]
-	grad[9] -= 2 * (data[9] - estim(data))
+		grad[i] -= 2 * (data[9] - estimate) * data[i]
+	grad[9] -= 2 * (data[9] - estimate)
 	
 def answer():
 	temp = []
@@ -50,7 +51,9 @@ infile = open('test_X.csv')
 for line in infile:
 	split = line.split(',')
 	if (split[1] == "PM2.5"):
-		test.append([split[0]].extend(map(lambda x: float(x), split[2:])))
+		temp = [split[0]]
+		temp.extend(map(lambda x: float(x), split[2:]))
+		test.append(temp)
 infile.close()
 
 # Training
@@ -61,7 +64,9 @@ for x in range(loop):
 		grad_sq_sum[i] += math.pow(grad[i], 2)
 		params[i] = params[i] - rate(i) * grad[i]
 	grad = [0] * 10
-	print((i, predict())) #Inspect the running progress
+	if x % 100 == 0:
+		print(x, predict()) # Show progress
+		print(params)
 
 ans = answer()
 
