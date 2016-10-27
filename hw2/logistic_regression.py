@@ -57,8 +57,6 @@ if sys.argv[1] == '--train':
 		train_data.append(map(float, split[1:58]))
 		train_ans.append(int(split[58]))
 	infile.close()
-	
-	outfile = open(sys.argv[4], 'w')
 
 	# Training
 	for x in range(loop):
@@ -69,7 +67,7 @@ if sys.argv[1] == '--train':
 		# Dump parameter every 10 iterations
 		if not((x + 1) % 10):
 			string = ','.join(map(str, params))
-			outfile.seek(0)
+			outfile = open(sys.argv[4], 'w')
 			outfile.write(string)
 	
 	outfile.close()
