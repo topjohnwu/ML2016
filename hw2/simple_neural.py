@@ -61,11 +61,13 @@ if sys.argv[1] == '--train':
 	# Variables
 	train_data = []
 	train_ans = []
+	
+	nodecount = 30
 
 	# Initialize data
-	net_params = [[[random.uniform(0, 0.01) for x in range(58)] for x in range(57)], [[random.uniform(0, 0.02) for x in range(58)] for x in range(1)]]
-	grad = [[[0.0 for x in range(58)] for x in range(57)], [[0.0 for x in range(58)] for x in range(1)]]
-	grad_sq_sum = [[[0.0 for x in range(58)] for x in range(57)], [[0.0 for x in range(58)] for x in range(1)]]
+	net_params = [[[random.uniform(0, 0.01) for x in range(58)] for x in range(nodecount)], [[random.uniform(0, 0.02) for x in range(nodecount)] for x in range(1)]]
+	grad = [[[0.0 for x in range(58)] for x in range(nodecount)], [[0.0 for x in range(58)] for x in range(1)]]
+	grad_sq_sum = [[[0.0 for x in range(58)] for x in range(nodecount)], [[0.0 for x in range(58)] for x in range(1)]]
 
 	loop = int(sys.argv[2])
 	l_rate = 0.001
@@ -78,16 +80,14 @@ if sys.argv[1] == '--train':
 		train_ans.append(int(split[58]))
 	infile.close()
 	
-	outfile = open(sys.argv[4], 'w')
-	
 	# Training
 	for x in range(loop):
 		results = []
 		for i in range(len(train_data)):
 			results.append(gradient(train_data[i], train_ans[i], 0))
 			updateParam()
-		outfile.seek(0)
-		string = '\n'.join(map(lambda layer: '|'.join(map(lambda node: ','.join(map(str, node)), layer)), net_params))
+		outfile = open(sys.argv[4], 'w')
+		string = '\n'.join(map(lambda layer: '|'.join(map(lambda node: ','.join(map("{:.9f}".format, node)), layer)), net_params))
 		outfile.write(string)
 		print(x + 1, predict(results)) # Show progress
 	
