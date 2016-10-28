@@ -5,9 +5,7 @@ import sys
 from operator import mul
 
 def estim(data, params):
-	num = 0.0
-	for i in range(len(data)):
-		num += sum(map(mul, data, params[:len(data)]))
+	num = len(data) * sum(map(mul, data, params[:len(data)]))
 	num += params[len(params) - 1]
 	return num
 
