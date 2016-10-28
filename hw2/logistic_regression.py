@@ -4,9 +4,7 @@ import sys
 from operator import mul
 
 def estim(data):
-	num = 0.0
-	for i in range(len(data)):
-		num += sum(map(mul, data, params[:len(data)]))
+	num = sum(map(mul, data, params[:len(data)]))
 	num += params[len(params) - 1]
 	return num
 
@@ -24,6 +22,7 @@ def gradient(data, ans):
 	for i in range(len(data)):
 		grad[i] -= (ans - estimate) * data[i]
 	grad[len(grad) - 1] -= ans - estimate
+	return estimate
 
 def updateParam():
 	global grad
@@ -32,11 +31,11 @@ def updateParam():
 		params[i] -= rate(grad_sq_sum[i]) * grad[i]
 	grad = [0.0 for x in range(58)]
 
-def predict():
+def predict(result):
 	num = 0.0
-	for i in range(len(train_data)):
-		num += (estim(train_data[i]) > 0) == train_ans[i]
-	return num / len(train_data)
+	for i in range(len(train_ans)):
+		num += ((result[i] > 0.5) == train_ans[i])
+	return num / len(train_ans)
 	
 if sys.argv[1] == '--train':
 	# Variables
@@ -48,7 +47,7 @@ if sys.argv[1] == '--train':
 	grad_sq_sum = [0.0 for x in range(58)]
 
 	loop = int(sys.argv[2])
-	l_rate = 0.001
+	l_rate = 0.05
 	
 	# Read training data
 	infile = open(sys.argv[3])
@@ -60,12 +59,13 @@ if sys.argv[1] == '--train':
 
 	# Training
 	for x in range(loop):
+		result = []
 		for i in range(len(train_data)):
-			gradient(train_data[i], train_ans[i])
+			result.append(gradient(train_data[i], train_ans[i]))
 			updateParam()
-		print(x + 1, predict()) # Show progress
 		# Dump parameter every 10 iterations
 		if not((x + 1) % 10):
+			print(x + 1, predict(result)) # Show progress
 			string = ','.join(map(str, params))
 			outfile = open(sys.argv[4], 'w')
 			outfile.write(string)
