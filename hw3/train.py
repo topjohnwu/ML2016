@@ -1,4 +1,4 @@
-import pickle, sys
+import pickle, sys, os
 import numpy as np
 
 from keras.preprocessing.image import ImageDataGenerator
@@ -7,7 +7,19 @@ from keras.layers import Dense, Dropout, Activation, Flatten
 from keras.layers import Convolution2D, MaxPooling2D
 from keras.optimizers import SGD
 
-all_label = pickle.load(open('all_label.p', 'rb'))
+# $0 <data path> <output file>
+
+# Params
+batch_size = 32
+nb_classes = 10
+nb_epoch = 30
+threshold = 0.98
+do_weight = True
+# 'sgd', 'rmsprop', 'adagrad', 'adadelta', 'adam', 'adamax', 'nadam'
+optimizer = 'adam'
+
+all_label = pickle.load(open(sys.argv[1] + '/all_label.p', 'rb'))
+all_unlabel = pickle.load(open(sys.argv[1] + '/all_unlabel.p', 'rb'))
 
 # Create labeled
 labeled = []
@@ -15,23 +27,29 @@ for num_class in all_label:
 	for image in num_class:
 		labeled.append(np.array(image).reshape(3, 32, 32))
 labeled = np.array(labeled)
+labeled = labeled.astype("float32")
+labeled /= 255
 
-# Create answer
+# Create labeled answer
 ans = []
 index = 0
-def assign(x):
-  x[index] = 1
-  return x
+def set_answer(x):
+	x[index] = 1
+	return x
  
 for i in range(10):
-  index = i
-  ans += map(assign, [[0 for i in range(10)] for i in range(500)])
+	index = i
+	ans += map(set_answer, [[0 for i in range(10)] for i in range(500)])
 
 ans = np.array(ans)
 
-batch_size = 32
-nb_classes = 10
-nb_epoch = 200
+# Create unlabeled
+unlabeled = []
+for image in all_unlabel:
+	unlabeled.append(np.array(image).reshape(3, 32, 32))
+unlabeled = np.array(unlabeled)
+unlabeled = unlabeled.astype("float32")
+unlabeled /= 255
 
 model = Sequential()
 
@@ -56,14 +74,44 @@ model.add(Dropout(0.5))
 model.add(Dense(nb_classes))
 model.add(Activation('softmax'))
 
-# let's train the model using SGD + momentum (how original).
-# sgd = SGD(lr=0.01, decay=1e-6, momentum=0.9, nesterov=True)
-model.compile(loss='categorical_crossentropy', optimizer=sys.argv[1], metrics=['accuracy'])
-
-labeled = labeled.astype("float32")
-labeled /= 255
+model.compile(loss='categorical_crossentropy', optimizer=optimizer, metrics=['accuracy'])
 
 model.fit(labeled, ans, batch_size=batch_size, nb_epoch=nb_epoch, shuffle=True)
 
+# Model is supervised trained, now predict unlabeled data
+# Dump the supervised model
+try:
+	os.remove('supervised.model')
+except OSError:
+	pass
+model.save('supervised.model')
+predicts = model.predict(unlabeled, verbose=1)
+# sampled[n] = [data, answer, weight]
+sampled = []
+
+for i in range(len(predicts)):
+	predict = predicts[i]
+	max = predict[0]
+	assumption = 0
+	for j in range(len(predict)):
+		if predict[j] > max:
+			assumption = j
+			max = predict[j]
+	if max > threshold:
+		index = assumption
+		sampled.append([unlabeled[i], set_answer([0 for i in range(10)]), max])
+
+data = np.concatenate((labeled, map(lambda x: x[0], sampled)), axis=0)
+ans = np.concatenate((ans, map(lambda x: x[1], sampled)), axis=0)
+weights = np.array([1.0 for x in range(5000)] + map(lambda x: x[2], sampled)) if do_weight else None
+
+print(data.shape, ans.shape)	
+
+model.fit(data, ans, batch_size=batch_size, nb_epoch=nb_epoch, shuffle=True, sample_weight=weights)
+
+try:
+	os.remove(sys.argv[2])
+except OSError:
+	pass
 model.save(sys.argv[2])
 
