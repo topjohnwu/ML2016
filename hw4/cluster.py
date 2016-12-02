@@ -9,6 +9,7 @@ from sklearn.cluster import KMeans
 from sklearn.preprocessing import Normalizer
 from sklearn.feature_extraction.text import TfidfVectorizer
 from sklearn.pipeline import make_pipeline
+from sklearn.metrics import pairwise_distances_argmin
 
 import matplotlib.pyplot as plt
 import matplotlib.colors as colors
@@ -89,6 +90,25 @@ for i in range(n_clusters):
 	for ind in order_centroids[i, :10]:
 		print(' %s' % terms[ind], end = '')
 	print()
+
+# colors_ = colors.cnames.keys()
+# fig = plt.figure(figsize = (10, 10))
+# fig.subplots_adjust(left = 0.01, right = 0.99, bottom = 0.02, top = 0.9)
+# k_means_cluster_centers = np.sort(kmean.cluster_centers_, axis = 0)
+# k_means_labels = pairwise_distances_argmin(X, k_means_cluster_centers)
+
+# ax = fig.add_subplot(1, 1, 1)
+# for k, col in zip(range(n_clusters), colors_):
+# 	my_members = k_means_labels == k
+# 	cluster_center = k_means_cluster_centers[k]
+# 	ax.plot(X[my_members, 0], X[my_members, 1], 'o', markerfacecolor = col,
+# 			markersize = 2)
+# 	ax.plot(cluster_center[0], cluster_center[1], 'o', markerfacecolor = col,
+# 			 markeredgecolor = 'k', markersize = 8)
+# ax.set_title('KMeans')
+# ax.set_xticks(())
+# ax.set_yticks(())
+# plt.show()
 
 clusters = np.array(kmean.labels_)
 
