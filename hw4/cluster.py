@@ -71,7 +71,7 @@ if n_components:
 	print()
 
 kmean = KMeans(n_clusters = n_clusters, init = 'k-means++', n_jobs = -1,
-			max_iter = max_iter, n_init = n_init, verbose = True)
+			max_iter = max_iter, n_init = n_init, verbose = False)
 
 print("Clustering sparse data with %s" % kmean)
 kmean.fit(X)
